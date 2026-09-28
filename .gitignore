@@ -1,0 +1,17 @@
+# Build artifacts
+/target/
+/build/
+
+# Binary artifacts
+/bin/
+
+# Distribution artifacts
+/dist/
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Virtual environments
+/.venv/
