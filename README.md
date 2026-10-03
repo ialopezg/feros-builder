@@ -22,12 +22,12 @@ compatibility, firmware provenance, or successful physical boot.
 
 ## Responsibilities
 
-| Component | Responsibility |
-| --- | --- |
-| FeROS Core | Operating-system sources, platform code, and linker contracts |
-| Workspace | Bootstrap, Core compilation orchestration, firmware selection, and shared outputs |
-| FeROS Builder | Boot-image construction and validation |
-| FeROS Flasher | Device discovery, media writing, verification, and ejection |
+| Component     | Responsibility                                                                    |
+|---------------|-----------------------------------------------------------------------------------|
+| FeROS Core    | Operating-system sources, platform code, and linker contracts                     |
+| Workspace     | Bootstrap, Core compilation orchestration, firmware selection, and shared outputs |
+| FeROS Builder | Boot-image construction and validation                                            |
+| FeROS Flasher | Device discovery, media writing, verification, and ejection                       |
 
 Builder receives `--ddr`, `--stage0`, and `--output` from its caller. It does not
 locate a Core checkout, compile Core, select firmware, or invoke Flasher.
@@ -62,44 +62,34 @@ for runtime packaging and platform constraints. Dependency pinning here covers
 PyInstaller itself, not a complete transitive dependency lock or bit-for-bit
 reproducible executable builds.
 
-## Workspace Installation
+## Workspace Integration
 
-From the workspace root:
-
-```bash
-make -C tools/feros-builder BIN_ROOT="$PWD/bin" release
-```
-
-On macOS ARM64 this installs `bin/darwin/aarch64/builder`, beside `flasher`.
-Workspace bootstrap can run that preparation before normal orchestration.
-Updating bootstrap and the workspace Makefile is a separate integration step.
+The workspace owns its menu, tool installation, firmware selection, and build
+orchestration. Enter that workflow with `make` at the workspace root and select
+an operation. This standalone repository does not require a workspace checkout.
+Its Makefile accepts `BIN_ROOT` when a caller needs a shared installation path.
 
 The host architecture follows the Python process used for packaging. Use a
-native ARM64 Python when building for Apple Silicon rather than an x86_64
-Python running under Rosetta.
+native ARM64 Python for Apple Silicon.
 
 ## Usage
 
-From the workspace root on macOS ARM64, after Core compilation:
+With the extracted executable and caller-provided payloads:
 
 ```bash
-bin/darwin/aarch64/builder build \
-  --ddr firmwares/rockchip/rk3566/rk3566_ddr_1056MHz_v1.26.bin \
-  --stage0 build/x55/feros.bin \
-  --output build/x55/boot/feros-x55.img
-
-bin/darwin/aarch64/builder validate \
-  --image build/x55/boot/feros-x55.img
+./builder build --ddr /path/to/ddr.bin --stage0 /path/to/feros.bin --output /path/to/boot.img
+./builder validate --image /path/to/boot.img
 ```
 
 Paths are explicit and relative to the caller's working directory unless
 absolute. `build` replaces the requested output file if it exists. Run
-`validate` after construction. Neither operation writes physical media.
+`validate` after construction. Builder has no physical-media workflow. The current CLI uses ordinary file
+access and does not enforce a device-path or symlink sandbox; see SECURITY.md.
 
 ```bash
-bin/darwin/aarch64/builder --help
-bin/darwin/aarch64/builder build --help
-bin/darwin/aarch64/builder validate --help
+./builder --help
+./builder build --help
+./builder validate --help
 ```
 
 ## Development
@@ -133,6 +123,19 @@ relative to this repository unless stated otherwise.
 Maintained by **Isidro A. López G.**, FeROS Project.
 
 Ideas, experiments, technical review, and contributions are welcome.
+
+## Project Policies
+
+- [Changelog](CHANGELOG.md)
+- [Collaborators](COLLABORATORS.md) and [contributing](CONTRIBUTING.md)
+- [Code of conduct](CODE_OF_CONDUCT.md) and [security](SECURITY.md)
+- [Versioning](VERSIONING.md) and [stability](STABILITY.md)
+- [Release procedure](RELEASE.md) and [third-party components](THIRD_PARTY.md)
+- [Architecture decisions](docs/adr/README.md)
+
+The release workflow prepares drafts for maintainer review. CI status, private
+reporting configuration, and third-party notices must be reviewed before the
+first publication. No release has been published merely by adding these files.
 
 ## License
 
