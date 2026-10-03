@@ -6,7 +6,9 @@ components. Discuss changes to these boundaries before implementing them.
 
 ## Development
 
-Use Python 3.10 or newer, GNU Make, and a supported macOS or Linux host.
+Use Python 3.10 or newer, GNU Make, and a supported macOS, Linux, or Windows host.
+On Windows, use Git Bash with GNU Make and native Windows Python on PATH;
+run `make release PYTHON=python`.
 Sources live directly under `src/`; keep platform image implementations under
 `src/image/`. Use English for code comments, diagnostics, and documentation.
 
@@ -24,7 +26,7 @@ expected bytes merely to make a test pass.
 ## Pull requests
 
 Explain the problem, the resulting behavior, and how it was verified. Keep
-changes scoped and add an Unreleased changelog entry for user-visible changes.
+changes scoped and update the versioned changelog entry for user-visible changes.
 Record architectural decisions in `docs/adr/`. Source and packaged CLI tests
 must pass on the supported CI matrix before a release is prepared.
 

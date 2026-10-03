@@ -2,13 +2,13 @@
 
 ## Current status
 
-The first release is planned as `v0.1.0`; it has not been published. The package
+The initial version is `v0.1.0`; publication is a separate maintainer action. The package
 version alone does not mean a Git tag or GitHub Release exists.
 
 ## Prepare the candidate
 
-1. Review the changes, confirm the MIT license, and update `CHANGELOG.md` from
-   Unreleased to a dated version section when the candidate is ready.
+1. Review the changes, confirm the MIT license, and confirm the `CHANGELOG.md` entry
+   identifies the candidate version.
 2. Designate the private conduct contact and enable/test GitHub Private
    Vulnerability Reporting. Review CODEOWNERS and repository permissions.
 3. Run source and executable tests on the supported CI matrix. Exercise actual
@@ -24,8 +24,8 @@ version alone does not mean a Git tag or GitHub Release exists.
 
 Run the **Release candidate** workflow manually from `main` and enter the
 existing tag. The workflow checks out that tag, verifies its package version,
-builds and tests native binaries on macOS ARM64 and Linux x86_64, packages them,
-and verifies the extracted binaries with the CLI suite. Both platforms must
+builds and tests native binaries on macOS ARM64, Linux x86_64, and Windows x86_64, packages them,
+and verifies the extracted binaries with the CLI suite. All three platforms must
 succeed before a separate job creates a draft GitHub Release.
 
 Only that final job has `contents: write`. It uses the workflow's own artifacts
@@ -44,12 +44,21 @@ make release PYTHON=python3.13
 .venv/bin/python scripts/package.py
 ```
 
+On Windows, use Git Bash with GNU Make and native Windows Python:
+
+```bash
+make release PYTHON=python
+.venv/Scripts/python.exe scripts/package.py
+```
+
 This is the standalone product's release tooling. Workspace build operations
 remain menu-driven. Packaging itself does not upload or publish anything.
 
-The archive contains `builder`, README, LICENSE, CHANGELOG, SECURITY, VERSIONING,
+The archive contains `builder` (`builder.exe` on Windows), README, LICENSE, CHANGELOG, SECURITY, VERSIONING,
 STABILITY, THIRD_PARTY, `BUILD-INFO.json`, and collected license notices.
-`dist/` receives a `.tar.gz` and its `.sha256` sidecar. To verify the download,
+`dist/` receives a `.tar.gz` and its `.sha256` sidecar on every platform.
+On Windows, Git Bash can verify it with `sha256sum -c ARCHIVE.tar.gz.sha256`,
+and `tar -xzf ARCHIVE.tar.gz` extracts it. To verify the download,
 run `shasum -a 256 -c ARCHIVE.tar.gz.sha256` beside the archive. Inspect/extract
 only a trusted package, then run its executable's help and the CLI regression
 suite via the `BUILDER` environment variable from an unrelated working directory.
@@ -58,7 +67,8 @@ suite via the `BUILDER` environment variable from an unrelated working directory
 
 Review the draft notes, tag/commit, CI results, archive contents, checksums,
 license notices, and host compatibility information. State that the macOS
-artifact is not notarized and that integrity validation does not establish
+artifact is not notarized and the Windows executable is not Authenticode-signed.
+Integrity validation does not establish
 firmware authenticity or physical boot success. Publish the reviewed draft
 manually. A release does not require or authorize a physical-media write.
 

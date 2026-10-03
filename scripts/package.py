@@ -45,10 +45,13 @@ def package(binary, tag):
     system = platform.system().lower()
     arch = {"arm64": "aarch64", "amd64": "x86_64"}.get(
         platform.machine().lower(), platform.machine().lower())
-    if system not in ("darwin", "linux") or arch not in ("aarch64", "x86_64"):
+    if ((system, arch) not in {("darwin", "aarch64"), ("darwin", "x86_64"),
+                              ("linux", "aarch64"), ("linux", "x86_64"),
+                              ("windows", "x86_64")}):
         raise ValueError("Unsupported package host")
     if not binary.is_file() or not os.access(binary, os.X_OK):
         raise ValueError("A tested executable is required")
+    binary_name = "builder.exe" if system == "windows" else "builder"
     name = f"feros-builder-v{release_version}-{system}-{arch}"
     dist = ROOT / "dist"
     dist.mkdir(exist_ok=True)
@@ -59,7 +62,7 @@ def package(binary, tag):
     with tempfile.TemporaryDirectory(prefix="builder-package-") as directory:
         stage = Path(directory) / name
         stage.mkdir()
-        shutil.copy2(binary, stage / "builder")
+        shutil.copy2(binary, stage / binary_name)
         for filename in DOCUMENTS:
             shutil.copy2(ROOT / filename, stage / filename)
         licenses = stage / "licenses"
@@ -67,15 +70,18 @@ def package(binary, tag):
             shutil.copytree(ROOT / "licenses", licenses)
         else:
             licenses.mkdir()
-        python_license = Path(sysconfig.get_path("stdlib")) / "LICENSE.txt"
-        if not python_license.is_file():
+        python_license = next((path for path in (
+            Path(sysconfig.get_path("stdlib")) / "LICENSE.txt",
+            Path(sys.base_prefix) / "LICENSE.txt",  # Native Windows Python.
+        ) if path.is_file()), None)
+        if python_license is None:
             raise ValueError("CPython LICENSE.txt missing from build interpreter")
         shutil.copy2(python_license, licenses / "CPython-LICENSE.txt")
         pyinstaller = metadata.distribution("pyinstaller")
         found = False
         for entry in pyinstaller.files or []:
             if "licenses" in entry.parts or entry.name.upper().startswith(("COPYING", "LICENSE")):
-                source = Path(pyinstaller.locate_file(entry))
+                source = Path(str(pyinstaller.locate_file(entry)))
                 if source.is_file():
                     destination = licenses / "PyInstaller" / Path(*entry.parts)
                     destination.parent.mkdir(parents=True, exist_ok=True)
@@ -94,7 +100,7 @@ def package(binary, tag):
             "inventory_scope": "Build environment; not a complete binary SBOM",
         }
         (stage / "BUILD-INFO.json").write_text(json.dumps(info, indent=2) + "\n")
-        env = dict(os.environ, BUILDER=str(stage / "builder"))
+        env = dict(os.environ, BUILDER=str(stage / binary_name))
         subprocess.run([sys.executable, str(ROOT / "scripts/check.py")],
                        cwd=directory, env=env, check=True)
         temporary = Path(directory) / archive.name
@@ -110,19 +116,20 @@ def package(binary, tag):
                     raise ValueError("Unexpected archive entry")
             source.extractall(extracted, **({"filter": "data"}
                               if hasattr(tarfile, "data_filter") else {}))
-        env["BUILDER"] = str(extracted / name / "builder")
+        env["BUILDER"] = str(extracted / name / binary_name)
         subprocess.run([sys.executable, str(ROOT / "scripts/check.py")],
                        cwd=extracted, env=env, check=True)
         shutil.copy2(temporary, archive)
     digest = hashlib.sha256(archive.read_bytes()).hexdigest()
-    checksum.write_text(f"{digest}  {archive.name}\n")
+    checksum.write_text(f"{digest}  {archive.name}\n", encoding="utf-8", newline="\n")
     print(archive)
     print(checksum)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--binary", type=Path, default=ROOT / "target/release/builder")
+    parser.add_argument("--binary", type=Path, default=ROOT / "target/release" /
+                        ("builder.exe" if os.name == "nt" else "builder"))
     parser.add_argument("--tag", help="Existing vMAJOR.MINOR.PATCH tag to verify")
     args = parser.parse_args()
     try:

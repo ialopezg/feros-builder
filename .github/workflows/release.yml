@@ -45,8 +45,13 @@ jobs:
         include:
           - runner: ubuntu-24.04
             artifact: linux-x86_64
+            venv_python: .venv/bin/python
           - runner: macos-15
             artifact: darwin-aarch64
+            venv_python: .venv/bin/python
+          - runner: windows-2025
+            artifact: windows-x86_64
+            venv_python: .venv/Scripts/python.exe
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -56,12 +61,19 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: '3.13'
+      - name: Install GNU Make on Windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: choco install make --yes --no-progress
       - name: Build and test
+        shell: bash
         run: make release PYTHON=python
       - name: Package tagged candidate
         env:
           RELEASE_TAG: ${{ inputs.tag }}
-        run: .venv/bin/python scripts/package.py --tag "$RELEASE_TAG"
+        shell: bash
+        run: |
+          "${{ matrix.venv_python }}" scripts/package.py --tag "$RELEASE_TAG"
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: release-${{ matrix.artifact }}
@@ -89,7 +101,7 @@ jobs:
         run: |
           set -euo pipefail
           test "$(gh api "repos/$GH_REPO/commits/$RELEASE_TAG" --jq .sha)" = "$SOURCE_COMMIT"
-          for platform in darwin-aarch64 linux-x86_64; do
+          for platform in darwin-aarch64 linux-x86_64 windows-x86_64; do
             archive="feros-builder-$RELEASE_TAG-$platform.tar.gz"
             test -f "dist/$archive"
             test -f "dist/$archive.sha256"
@@ -99,9 +111,9 @@ jobs:
             "FeROS Builder $RELEASE_TAG" \
             "Source commit: $SOURCE_COMMIT" \
             'RK3566 RKNS image construction and validation from explicit inputs.' \
-            'Native macOS ARM64 and Linux x86_64 packages were built and tested in this workflow.' \
+            'Native macOS ARM64, Linux x86_64, and Windows x86_64 packages were built and tested in this workflow.' \
             'Experimental 0.x release. Hash validation is not firmware authentication or physical boot verification.' \
-            'macOS binaries are not notarized. Review BUILD-INFO.json for build-host details.' \
+            'macOS binaries are not notarized; Windows binaries are not Authenticode-signed. Review BUILD-INFO.json for build-host details.' \
             'Maintainer review required: notices, compatibility, reporting channels, and CHANGELOG before publication.' \
             > release-notes.md
           gh release create "$RELEASE_TAG" dist/*.tar.gz dist/*.sha256 \
