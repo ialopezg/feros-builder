@@ -7,16 +7,21 @@ The tool exists to keep binary-format knowledge out of the Makefile and
 to make the RKNS construction process explicit, reproducible, and
 independently verifiable.
 
+> Historical reference: the numeric examples and firmware hashes below
+> describe earlier bring-up captures. They are not the current output contract.
+> The implementation reserves 472 sectors for Stage 0; older examples showing
+> a single padded sector are retained as historical evidence. Firmware is an
+> explicit external input and is not distributed with Builder.
+
 ## Location
 
 ``` text
-tools/image/rk3566/
+src/image/rk3566/
 ├── mkimage.py
 └── README.md
 ```
 
-The current RK3566 DDR initialization firmware is maintained separately
-as an explicit SoC dependency:
+The historical DDR dependency was stored in Core at:
 
 ``` text
 soc/rockchip/rk3566/firmware/ddr.bin
@@ -227,13 +232,13 @@ its dependencies change.
 
 ## Building an Image
 
-The tool exposes an explicit `build` command:
+From this repository, supply explicit input and output paths:
 
 ``` bash
-python3 tools/image/rk3566/mkimage.py build \
-  --ddr soc/rockchip/rk3566/firmware/ddr.bin \
-  --stage0 build/x55/feros.bin \
-  --output build/x55/boot/feros-x55.img
+python3 src/main.py build \
+  --ddr /path/to/ddr.bin \
+  --stage0 /path/to/feros.bin \
+  --output /path/to/feros-x55.img
 ```
 
 The builder:
@@ -255,7 +260,7 @@ The normal repository workflow performs this operation through:
 make prepare-x55
 ```
 
-The Makefile orchestrates the operation. `mkimage.py` owns the RKNS
+The workspace Makefile orchestrates the operation. `mkimage.py` owns the RKNS
 binary format.
 
 ## Validating an Image
@@ -263,8 +268,8 @@ binary format.
 Validate an existing image with:
 
 ``` bash
-python3 tools/image/rk3566/mkimage.py validate \
-  --image build/x55/boot/feros-x55.img
+python3 src/main.py validate \
+  --image /path/to/feros-x55.img
 ```
 
 Validation checks include:
@@ -290,9 +295,9 @@ the RKNS structure understood by the tool.
 It does not by itself prove that the RK3566 BootROM has executed FeROS
 Stage 0 on physical hardware.
 
-## Current Verified Build
+## Historical Verified Build
 
-For the current X55 Stage 0 and DDR firmware, image generation produces:
+An earlier X55 Stage 0 and DDR firmware combination produced:
 
 ``` text
 RKNS offset:  0x8000
@@ -323,7 +328,7 @@ Stage 0 offset as a permanent constant.
 
 ## Firmware Dependency
 
-The current image uses:
+The historical image used:
 
 ``` text
 soc/rockchip/rk3566/firmware/ddr.bin

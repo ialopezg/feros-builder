@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "feros-builder"
+version = "0.1.0"
+description = "Build and validate FeROS boot images"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [{name = "Isidro A. Lopez G."}]
+readme = "README.md"
+dependencies = []
+
+[project.optional-dependencies]
+build = ["pyinstaller==6.22.3"]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+py-modules = ["cli", "main"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["image*"]
+namespaces = true
