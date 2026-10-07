@@ -63,7 +63,12 @@ def available() -> list[dict]:
     if not path.exists():
         initialize(path)
 
-    with path.open("rb") as stream:
+    return _load_configuration()["repositories"]
+
+
+def _load_configuration() -> dict:
+    """Read and validate the existing store without creating or changing it."""
+    with configuration_path().open("rb") as stream:
         configuration = tomllib.load(stream)
 
     if configuration.get("schema_version") != "1.0":
@@ -85,7 +90,7 @@ def available() -> list[dict]:
         if not isinstance(entry.get("official"), bool):
             raise ValueError("invalid repository classification")
 
-    return repositories
+    return configuration
 
 
 REGISTRY_URL = "https://raw.githubusercontent.com/ialopezg/feros-targets/main/repository.toml"
@@ -178,3 +183,31 @@ def add(uri: str, name: str | None = None) -> dict:
     configuration["repositories"].append(entry)
     _save(configuration)
     return entry
+
+def delete(selector: str) -> dict:
+    """Remove a subscription by its displayed index or case-insensitive name."""
+    selector = selector.strip()
+    hint = "Run 'builder repository' to list registered repositories."
+    if not selector:
+        raise ValueError(f"repository index or name is required. {hint}")
+    if not configuration_path().exists():
+        raise ValueError(f"no repository configuration exists. {hint}")
+
+    configuration = _load_configuration()
+    repositories = configuration["repositories"]
+    if selector.isascii() and selector.isdecimal():
+        index = int(selector) - 1
+        if index < 0 or index >= len(repositories):
+            raise ValueError(f"repository index out of range: {selector}. {hint}")
+    else:
+        matches = [index for index, entry in enumerate(repositories)
+                   if entry["name"].casefold() == selector.casefold()]
+        if not matches:
+            raise ValueError(f"repository not found: {selector}. {hint}")
+        if len(matches) > 1:
+            raise ValueError(f"repository name is ambiguous: {selector}; use its index. {hint}")
+        index = matches[0]
+
+    removed = repositories.pop(index)
+    _save(configuration)
+    return removed

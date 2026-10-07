@@ -131,7 +131,7 @@ class BuilderCLI(unittest.TestCase):
         cases = [("build", "--device-name", "test", "--firmware", str(image),
                   "--output", str(output), "--validate"),
                  ("validate", "--image", str(image)), ("update",),
-                 ("repository", "--info", "1"), ("repository", "--delete", "1"),
+                 ("repository", "--info", "1"),
                  ("repository", "--update"), ("repository", "--update", "example.com")]
         for args in cases:
             with self.subTest(args=args):
@@ -140,3 +140,31 @@ class BuilderCLI(unittest.TestCase):
                 self.assertEqual(image.read_bytes(), b"RKNS")
                 self.assertFalse(output.exists())
                 self.assertFalse(self.config.exists())
+
+
+    def test_delete_by_index_and_name(self):
+        self.run_cli("repository")
+        with self.config.open("a", encoding="utf-8") as stream:
+            stream.write('\n[[repositories]]\nid="custom"\nname="Custom Source"\n'
+                         'url="https://example.com/"\nofficial=false\n')
+        result = self.run_cli("repository", "--delete", "2")
+        self.assertIn("Repository deleted: Custom Source", result.stdout)
+        self.assertNotIn("Custom Source", self.run_cli("repository").stdout)
+        self.run_cli("repository", "--delete", "feros official repository")
+        output = self.run_cli("repository").stdout
+        self.assertIn("No repositories registered.", output)
+        self.assertNotIn("[official]", output)
+        self.assertEqual(tomllib.loads(self.config.read_text())["repositories"], [])
+
+    def test_invalid_delete_preserves_configuration(self):
+        self.run_cli("repository")
+        before = self.config.read_bytes()
+        for selector in ("0", "-1", "2", "missing", " "):
+            with self.subTest(selector=selector):
+                result = self.run_cli("repository", "--delete", selector, success=False)
+                self.assertIn("builder repository", result.stderr)
+                self.assertEqual(self.config.read_bytes(), before)
+
+    def test_delete_without_configuration_does_not_initialize(self):
+        self.run_cli("repository", "--delete", "1", success=False)
+        self.assertFalse(self.config.exists())

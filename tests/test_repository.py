@@ -95,3 +95,32 @@ class Repositories(unittest.TestCase):
                 management.add("https://example.com")
         self.assertEqual(self.path.read_bytes(), before)
         self.assertEqual(list(self.path.parent.iterdir()), [self.path])
+
+
+    def test_delete_preserves_other_fields_and_never_requests_registry(self):
+        management.available()
+        with self.path.open("a", encoding="utf-8") as stream:
+            stream.write('\n[preferences]\ncustom="retained"\n')
+        removed = management.delete("1")
+        self.assertEqual(removed["id"], "feros-official")
+        self.assertEqual(management.available(), [])
+        with self.path.open("rb") as stream:
+            config = management.tomllib.load(stream)
+        self.assertEqual(config["preferences"]["custom"], "retained")
+        self.opener.assert_not_called()
+
+    def test_delete_replace_failure_preserves_original_store(self):
+        management.available()
+        before = self.path.read_bytes()
+        with patch.object(management.os, "replace", side_effect=OSError("cannot replace")):
+            with self.assertRaisesRegex(OSError, "cannot replace"):
+                management.delete("1")
+        self.assertEqual(self.path.read_bytes(), before)
+        self.assertEqual(list(self.path.parent.iterdir()), [self.path])
+
+    def test_delete_rejects_malformed_store(self):
+        self.path.parent.mkdir(parents=True)
+        self.path.write_bytes(b"bad TOML [")
+        with self.assertRaises(ValueError):
+            management.delete("1")
+        self.assertEqual(self.path.read_bytes(), b"bad TOML [")

@@ -41,9 +41,14 @@ def repository_command(arguments) -> None:
         repository_add()
         return
 
+    if arguments.delete is not None:
+        removed = repository.delete(arguments.delete)
+        print(f"Repository deleted: {removed['name']}")
+        print(f"URL: {removed['url']}")
+        return
+
     if (
             arguments.info is not None
-            or arguments.delete is not None
             or arguments.update is not None
     ):
         raise ValueError("This repository operation is not implemented yet.")
@@ -108,8 +113,9 @@ def command_help(topic: str) -> None:
         print("  builder repository --delete <index|name>")
         print("  builder repository --update [<index|name>]")
         print()
-        print("Listing and interactive registration are available.")
-        print("Info, delete and update are not implemented yet.")
+        print("Listing, interactive registration and deletion are available.")
+        print("Delete accepts a 1-based index or name (quote names containing spaces).")
+        print("Info and update are not implemented yet.")
     elif topic == "build":
         print("Usage:")
         print("  builder build --device-name <NAME> --firmware <PATH> --output <PATH> [--validate]")
