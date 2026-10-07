@@ -46,8 +46,7 @@ def repository_command(arguments) -> None:
             or arguments.delete is not None
             or arguments.update is not None
     ):
-        print("This repository operation is not implemented yet.")
-        return
+        raise ValueError("This repository operation is not implemented yet.")
 
     repositories = repository.available()
 
@@ -99,8 +98,34 @@ def main_header() -> None:
     print()
 
 
+def command_help(topic: str) -> None:
+    """Display the syntax and current availability of a command."""
+    if topic == "repository":
+        print("Usage:")
+        print("  builder repository")
+        print("  builder repository --add")
+        print("  builder repository --info <index|name>")
+        print("  builder repository --delete <index|name>")
+        print("  builder repository --update [<index|name>]")
+        print()
+        print("Listing and interactive registration are available.")
+        print("Info, delete and update are not implemented yet.")
+    elif topic == "build":
+        print("Usage:")
+        print("  builder build --device-name <NAME> --firmware <PATH> --output <PATH> [--validate]")
+        print("This operation is not implemented yet.")
+    elif topic == "validate":
+        print("Usage:")
+        print("  builder validate --image <PATH>")
+        print("This operation is not implemented yet.")
+    elif topic == "update":
+        print("Usage:")
+        print("  builder update")
+        print("This operation is not implemented yet.")
+
+
 def main() -> None:
-    """Parse and display arguments without executing operations."""
+    """Dispatch implemented commands and reject unavailable operations."""
     parser = create_parser()
     arguments = parser.parse_args()
 
@@ -113,5 +138,14 @@ def main() -> None:
             repository_command(arguments)
         except (OSError, ValueError) as error:
             parser.error(str(error))
+    elif arguments.command == "help":
+        topic = next((name for name in ("repository", "build", "validate", "update")
+                      if getattr(arguments, name)), None)
+        if topic is None:
+            general_help()
+        else:
+            command_help(topic)
+    elif arguments.command == "version":
+        return
     else:
-        print(arguments)
+        parser.error(f"{arguments.command} is not implemented yet")

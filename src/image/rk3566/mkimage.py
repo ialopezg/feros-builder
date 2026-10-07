@@ -2,10 +2,8 @@
 
 """Build and validate minimal Rockchip RK3566 RKNS boot images for FeROS."""
 
-import argparse
 import hashlib
 import struct
-from pathlib import Path
 
 
 # Size, in bytes, of one sector used by the Rockchip boot format.
@@ -212,6 +210,9 @@ def decode_descriptor(
 
 def build_image(ddr_payload: bytes, stage0_payload: bytes) -> bytes:
     """Build an RKNS image containing DDR initialization and FeROS Stage 0."""
+
+    if not ddr_payload or not stage0_payload:
+        raise ValueError("DDR and Stage 0 payloads must be non-empty")
 
     padded_ddr = pad_payload(ddr_payload)
     padded_stage0 = pad_stage0_payload(stage0_payload)
@@ -442,27 +443,3 @@ def validate_image(image: bytes) -> None:
     )
 
     print("RKNS image: VALID")
-
-
-def validate_command(arguments: argparse.Namespace) -> None:
-    """Load and validate an existing RKNS boot image."""
-
-    image = arguments.image.read_bytes()
-
-    validate_image(image)
-
-
-def main() -> None:
-    """Parse the command line and execute the requested image operation."""
-
-    parser = create_parser()
-    arguments = parser.parse_args()
-
-    try:
-        arguments.handler(arguments)
-    except (OSError, ValueError) as error:
-        parser.error(str(error))
-
-
-if __name__ == "__main__":
-    main()

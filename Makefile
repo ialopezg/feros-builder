@@ -39,14 +39,14 @@ release: setup
 	esac
 	"$(VENV_PYTHON)" scripts/check.py
 	"$(VENV_PYTHON)" -m PyInstaller --noconfirm --clean --onefile \
-		--name builder --paths src --distpath target/release \
+		--name builder --paths src --copy-metadata feros-builder --distpath target/release \
 		--workpath target/pyinstaller --specpath target src/main.py
 	BUILDER="$(abspath $(BINARY))" "$(VENV_PYTHON)" scripts/check.py
 	@mkdir -p "$(BIN_DIR)"
 	@set -eu; staging=$$(mktemp -d "$(BIN_DIR)/.builder.XXXXXX"); \
 		trap 'rm -rf "$$staging"' EXIT HUP INT TERM; \
 		install -m 755 "$(BINARY)" "$$staging/$(BINARY_NAME)"; \
-		"$$staging/$(BINARY_NAME)" --help >/dev/null; \
+		"$$staging/$(BINARY_NAME)" help >/dev/null; \
 		mv -f "$$staging/$(BINARY_NAME)" "$(BIN_DIR)/$(BINARY_NAME)"
 	@printf 'FeROS Builder: ready at %s/$(BINARY_NAME)\n' "$(BIN_DIR)"
 clean:
@@ -54,7 +54,7 @@ clean:
 help:
 	@printf 'FeROS Builder\n\n'
 	@printf '  make setup    Prepare isolated build dependencies\n'
-	@printf '  make test     Test the image CLI with synthetic inputs\n'
+	@printf '  make test     Test the CLI, repositories, and image engine\n'
 	@printf '  make release  Package, test, and install the host executable\n'
 	@printf '  make clean    Remove target/; retain installed executables\n'
 	@printf '\nOverride BIN_ROOT to install into a shared workspace bin/.\n'
