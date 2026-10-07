@@ -13,11 +13,36 @@ def product_version() -> str:
         return "unknown"
 
 
+def repository_add() -> None:
+    """Collect repository registration details interactively."""
+    print("Add repository")
+    print()
+
+    try:
+        url = input("Repository URL: ").strip()
+        name = input(
+            "Repository name [leave blank to use default name]: "
+        ).strip()
+    except (EOFError, KeyboardInterrupt):
+        print("\nRepository registration cancelled.")
+        return
+
+    entry = repository.add(url, name)
+    category = "official" if entry["official"] else "unofficial"
+
+    print()
+    print(f"Repository added: {entry['name']} [{category}]")
+    print(f"URL: {entry['url']}")
+
+
 def repository_command(arguments) -> None:
     """Display locally registered device-support repositories."""
+    if arguments.add:
+        repository_add()
+        return
+
     if (
-            arguments.add
-            or arguments.info is not None
+            arguments.info is not None
             or arguments.delete is not None
             or arguments.update is not None
     ):

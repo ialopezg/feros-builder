@@ -1,5 +1,5 @@
 """Device-support repository management."""
 
-from .management import available
+from .management import add, available
 
-__all__ = ["available"]
+__all__ = ["add", "available"]

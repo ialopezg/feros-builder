@@ -12,6 +12,7 @@ authors = [{name = "Isidro A. Lopez G."}]
 readme = "README.md"
 dependencies = [
     "tomli>=2,<3; python_version < '3.11'",
+    "tomli-w>=1,<2",
 ]
 
 [project.optional-dependencies]
