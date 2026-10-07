@@ -444,105 +444,12 @@ def validate_image(image: bytes) -> None:
     print("RKNS image: VALID")
 
 
-def build_command(arguments: argparse.Namespace) -> None:
-    """Build an RKNS boot image from DDR and FeROS Stage 0 payloads."""
-
-    ddr_payload = arguments.ddr.read_bytes()
-    stage0_payload = arguments.stage0.read_bytes()
-
-    if not ddr_payload:
-        raise ValueError("DDR payload is empty")
-
-    if not stage0_payload:
-        raise ValueError("Stage 0 payload is empty")
-
-    image = build_image(
-        ddr_payload=ddr_payload,
-        stage0_payload=stage0_payload,
-    )
-
-    arguments.output.parent.mkdir(
-        parents=True,
-        exist_ok=True,
-    )
-
-    arguments.output.write_bytes(image)
-
-    print(f"RKNS offset:  0x{RKNS_OFFSET:x}")
-    print(f"DDR size:     {len(ddr_payload)} bytes")
-    print(f"Stage 0 size: {len(stage0_payload)} bytes")
-    print(
-        "Stage 0 RKNS: "
-        f"{STAGE0_PAYLOAD_CAPACITY} bytes "
-        f"({STAGE0_PAYLOAD_SECTORS} sectors)"
-    )
-    print(f"Image size:   {len(image)} bytes")
-    print(f"Output:       {arguments.output}")
-
-
 def validate_command(arguments: argparse.Namespace) -> None:
     """Load and validate an existing RKNS boot image."""
 
     image = arguments.image.read_bytes()
 
     validate_image(image)
-
-
-def create_parser() -> argparse.ArgumentParser:
-    """Create and configure the FeROS RK3566 image-tool argument parser."""
-
-    parser = argparse.ArgumentParser(
-        description="Build and validate Rockchip RK3566 RKNS images for FeROS."
-    )
-
-    commands = parser.add_subparsers(
-        dest="command",
-        required=True,
-    )
-
-    build_parser = commands.add_parser(
-        "build",
-        help="Build an RK3566 RKNS boot image.",
-    )
-
-    build_parser.add_argument(
-        "--ddr",
-        required=True,
-        type=Path,
-        help="Path to the RK3566 DDR initialization payload.",
-    )
-
-    build_parser.add_argument(
-        "--stage0",
-        required=True,
-        type=Path,
-        help="Path to the FeROS Stage 0 binary.",
-    )
-
-    build_parser.add_argument(
-        "--output",
-        required=True,
-        type=Path,
-        help="Path for the generated RK3566 boot image.",
-    )
-
-    build_parser.set_defaults(handler=build_command)
-
-    validate_parser = commands.add_parser(
-        "validate",
-        help="Validate an existing RK3566 RKNS boot image.",
-    )
-
-    validate_parser.add_argument(
-        "--image",
-        required=True,
-        type=Path,
-        help="Path to the RK3566 RKNS boot image.",
-    )
-
-    validate_parser.set_defaults(handler=validate_command)
-
-    return parser
 
 
 def main() -> None:
