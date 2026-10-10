@@ -65,6 +65,17 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: choco install make --yes --no-progress
+      - name: Verify LF line endings
+        shell: bash
+        run: |
+          test -f .gitattributes
+          if grep -q $'\r' Makefile; then
+            echo 'Makefile has CRLF line endings; .gitattributes must enforce eol=lf' >&2
+            exit 1
+          fi
+      - name: Show build host
+        shell: bash
+        run: make doctor PYTHON=python
       - name: Build and test
         shell: bash
         run: make release PYTHON=python
