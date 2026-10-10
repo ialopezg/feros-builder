@@ -1,0 +1,13 @@
+# Normalize all text files to LF in the repository and in every checkout.
+# CRLF breaks Makefile recipes and shell scripts on Linux, macOS, and WSL.
+* text=auto eol=lf
+
+# Windows batch files need CRLF.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Never touch binaries (boot images, firmware, compiled artifacts).
+*.img binary
+*.bin binary
+*.elf binary
+*.png binary
