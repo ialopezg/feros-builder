@@ -27,6 +27,21 @@ def create_parser() -> argparse.ArgumentParser:
         metavar="INDEX|NAME",
     )
 
+    device = commands.add_parser(
+        "device",
+        help="Discover and manage device support.",
+        add_help=False,
+    )
+    device_actions = device.add_mutually_exclusive_group()
+    device_actions.add_argument("--list", action="store_true")
+    device_actions.add_argument("--search", metavar="QUERY")
+    device_actions.add_argument("--info", metavar="DEVICE")
+    device_actions.add_argument("--fetch", metavar="DEVICE")
+    device_actions.add_argument("--install", metavar="DEVICE")
+    device_actions.add_argument("--update", metavar="DEVICE")
+    device.add_argument("--component", metavar="COMPONENT")
+    device.add_argument("--version", metavar="VERSION")
+
     commands.add_parser(
         "update",
         help="Update Builder and repositories.",
@@ -58,6 +73,7 @@ def create_parser() -> argparse.ArgumentParser:
     )
     topics = help_parser.add_mutually_exclusive_group()
     topics.add_argument("--repository", action="store_true")
+    topics.add_argument("--device", action="store_true")
     topics.add_argument("--build", action="store_true")
     topics.add_argument("--validate", action="store_true")
     topics.add_argument("--update", action="store_true")

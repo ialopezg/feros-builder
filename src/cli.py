@@ -79,6 +79,7 @@ def general_help() -> None:
 
     commands = (
         ("repository", "List device sources"),
+        ("device", "Discover and manage device support"),
         ("build", "Build a device image"),
         ("validate", "Validate an image"),
         ("help", "Display general or command-specific help"),
@@ -92,7 +93,7 @@ def general_help() -> None:
     print()
     print("Command help:")
 
-    for name in ("repository", "build", "validate", "update"):
+    for name in ("repository", "device", "build", "validate", "update"):
         print(f"  builder help --{name}")
 
 
@@ -116,6 +117,16 @@ def command_help(topic: str) -> None:
         print("Listing, interactive registration and deletion are available.")
         print("Delete accepts a 1-based index or name (quote names containing spaces).")
         print("Info and update are not implemented yet.")
+    elif topic == "device":
+        print("Usage:")
+        print("  builder device")
+        print("  builder device --list")
+        print("  builder device --search <QUERY>")
+        print("  builder device --info <DEVICE>")
+        print("  builder device --fetch <DEVICE>")
+        print("  builder device --install <DEVICE> --component <COMPONENT> --version <VERSION>")
+        print("  builder device --update <DEVICE> --component <COMPONENT> --version <VERSION>")
+        print("Device operations are not implemented yet.")
     elif topic == "build":
         print("Usage:")
         print("  builder build --device-name <NAME> --firmware <PATH> --output <PATH> [--validate]")
@@ -144,8 +155,21 @@ def main() -> None:
             repository_command(arguments)
         except (OSError, ValueError) as error:
             parser.error(str(error))
+    elif arguments.command == "device":
+        if arguments.component is not None or arguments.version is not None:
+            if not (arguments.install or arguments.update):
+                parser.error("--component and --version require --install or --update")
+        if (arguments.install or arguments.update) and (
+            not arguments.component or not arguments.version
+        ):
+            parser.error("--install and --update require --component and --version")
+        if not any((arguments.list, arguments.search, arguments.info,
+                    arguments.fetch, arguments.install, arguments.update)):
+            command_help("device")
+        else:
+            parser.error("device operation is not implemented yet")
     elif arguments.command == "help":
-        topic = next((name for name in ("repository", "build", "validate", "update")
+        topic = next((name for name in ("repository", "device", "build", "validate", "update")
                       if getattr(arguments, name)), None)
         if topic is None:
             general_help()

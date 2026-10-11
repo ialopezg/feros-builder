@@ -71,6 +71,27 @@ class BuilderCLI(unittest.TestCase):
                 for text in expected:
                     self.assertIn(text, output)
 
+    def test_device_menu_and_pending_operations(self):
+        menu = self.run_cli("device").stdout
+        self.assertIn("builder device --list", menu)
+        self.assertIn("builder device --search <QUERY>", menu)
+        self.assertIn("builder device --install <DEVICE>", menu)
+        self.assertIn("builder device --update <DEVICE>", menu)
+        self.assertIn("builder device --fetch <DEVICE>", self.run_cli("help", "--device").stdout)
+        cases = (("--list",), ("--search", "powkiddy"), ("--info", "x55"),
+                 ("--fetch", "x55"),
+                 ("--install", "x55", "--component", "bootloader", "--version", "1.3"),
+                 ("--update", "x55", "--component", "bootloader", "--version", "1.3"))
+        for args in cases:
+            with self.subTest(args=args):
+                result = self.run_cli("device", *args, success=False)
+                self.assertIn("not implemented yet", result.stderr)
+        for args in (("--install", "x55"), ("--component", "bootloader"),
+                     ("--list", "--info", "x55")):
+            with self.subTest(invalid=args):
+                self.run_cli("device", *args, success=False)
+        self.assertFalse(self.config.exists())
+
     def test_first_list_initializes_once(self):
         output = self.run_cli("repository").stdout
         self.assertIn("FeROS Official Repository [official]", output)
