@@ -73,21 +73,34 @@ class BuilderCLI(unittest.TestCase):
 
     def test_device_menu_and_pending_operations(self):
         menu = self.run_cli("device").stdout
-        self.assertIn("builder device --list", menu)
-        self.assertIn("builder device --search <QUERY>", menu)
-        self.assertIn("builder device --install <DEVICE>", menu)
-        self.assertIn("builder device --update <DEVICE>", menu)
-        self.assertIn("builder device --fetch <DEVICE>", self.run_cli("help", "--device").stdout)
-        cases = (("--list",), ("--search", "powkiddy"), ("--info", "x55"),
-                 ("--fetch", "x55"),
-                 ("--install", "x55", "--component", "bootloader", "--version", "1.3"),
-                 ("--update", "x55", "--component", "bootloader", "--version", "1.3"))
-        for args in cases:
+        listing = self.run_cli("device", "--list").stdout
+        self.assertEqual(menu, listing)
+        self.assertIn("No device found", menu)
+        self.assertIn("Run 'builder help --device' for available commands.", menu)
+        self.assertNotIn("Device Support", menu)
+        self.assertNotIn("STATUS", menu)
+
+        help_text = self.run_cli("help", "--device").stdout
+        for expected in ("builder device --list", "builder device --search <QUERY>",
+                         "builder device --fetch <DEVICE>",
+                         "builder device --install <DEVICE>",
+                         "builder device --update <DEVICE>"):
+            self.assertIn(expected, help_text)
+
+        pending = (("--search", "powkiddy"), ("--info", "x55"),
+                   ("--fetch", "x55"),
+                   ("--install", "x55", "--component", "bootloader", "--version", "1.3"),
+                   ("--update", "x55", "--component", "bootloader", "--version", "1.3"))
+        for args in pending:
             with self.subTest(args=args):
                 result = self.run_cli("device", *args, success=False)
-                self.assertIn("not implemented yet", result.stderr)
-        for args in (("--install", "x55"), ("--component", "bootloader"),
-                     ("--list", "--info", "x55")):
+                self.assertIn("unknown command", result.stderr)
+                self.assertIn("builder help --device", result.stderr)
+
+        invalid = (("--install", "x55"), ("--component", "bootloader"),
+                   ("--list", "--component", "bootloader"),
+                   ("--list", "--info", "x55"), ("--nonexistent",))
+        for args in invalid:
             with self.subTest(invalid=args):
                 self.run_cli("device", *args, success=False)
         self.assertFalse(self.config.exists())
@@ -161,7 +174,6 @@ class BuilderCLI(unittest.TestCase):
                 self.assertEqual(image.read_bytes(), b"RKNS")
                 self.assertFalse(output.exists())
                 self.assertFalse(self.config.exists())
-
 
     def test_delete_by_index_and_name(self):
         self.run_cli("repository")
