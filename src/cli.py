@@ -2,6 +2,7 @@
 from importlib.metadata import PackageNotFoundError, version
 
 from parser import create_parser
+import device
 import repository
 
 
@@ -47,10 +48,7 @@ def repository_command(arguments) -> None:
         print(f"URL: {removed['url']}")
         return
 
-    if (
-            arguments.info is not None
-            or arguments.update is not None
-    ):
+    if arguments.info is not None or arguments.update is not None:
         raise ValueError("This repository operation is not implemented yet.")
 
     repositories = repository.available()
@@ -101,7 +99,7 @@ def main_header() -> None:
     """Display the standard application header."""
     print(f"FeROS Builder v{product_version()}")
     print("Build, validate binary images and manage device support.")
-    print()
+    print(flush=True)
 
 
 def command_help(topic: str) -> None:
@@ -126,7 +124,7 @@ def command_help(topic: str) -> None:
         print("  builder device --fetch <DEVICE>")
         print("  builder device --install <DEVICE> --component <COMPONENT> --version <VERSION>")
         print("  builder device --update <DEVICE> --component <COMPONENT> --version <VERSION>")
-        print("Device operations are not implemented yet.")
+        print("Search, info, fetch, install and update are not supported yet.")
     elif topic == "build":
         print("Usage:")
         print("  builder build --device-name <NAME> --firmware <PATH> --output <PATH> [--validate]")
@@ -144,9 +142,8 @@ def command_help(topic: str) -> None:
 def main() -> None:
     """Dispatch implemented commands and reject unavailable operations."""
     parser = create_parser()
-    arguments = parser.parse_args()
-
     main_header()
+    arguments = parser.parse_args()
 
     if arguments.command is None:
         general_help()
@@ -156,18 +153,18 @@ def main() -> None:
         except (OSError, ValueError) as error:
             parser.error(str(error))
     elif arguments.command == "device":
-        if arguments.component is not None or arguments.version is not None:
-            if not (arguments.install or arguments.update):
-                parser.error("--component and --version require --install or --update")
-        if (arguments.install or arguments.update) and (
-            not arguments.component or not arguments.version
-        ):
-            parser.error("--install and --update require --component and --version")
-        if not any((arguments.list, arguments.search, arguments.info,
-                    arguments.fetch, arguments.install, arguments.update)):
-            command_help("device")
+        if arguments.list or not any((
+            arguments.search,
+            arguments.info,
+            arguments.fetch,
+            arguments.install,
+            arguments.update,
+        )):
+            if arguments.component is not None or arguments.version is not None:
+                parser.error("unknown command", scope="builder device")
+            device.display()
         else:
-            parser.error("device operation is not implemented yet")
+            parser.error("unknown command", scope="builder device")
     elif arguments.command == "help":
         topic = next((name for name in ("repository", "device", "build", "validate", "update")
                       if getattr(arguments, name)), None)
