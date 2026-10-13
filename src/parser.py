@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import NoReturn
 
 
-def create_parser() -> argparse.ArgumentParser:
+def create_parser() -> BuilderArgumentParser:
     """Define commands and options without executing operations."""
     parser = BuilderArgumentParser(
         prog="builder",
