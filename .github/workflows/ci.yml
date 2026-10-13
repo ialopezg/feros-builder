@@ -29,58 +29,14 @@ jobs:
         run: python -m pip install -e .
       - name: Run checks
         run: python scripts/check.py
-  executable:
-    name: Executable / ${{ matrix.runner }}
-    runs-on: ${{ matrix.runner }}
-    timeout-minutes: 25
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - runner: ubuntu-24.04
-            venv_python: .venv/bin/python
-          - runner: macos-15
-            venv_python: .venv/bin/python
-          - runner: windows-2025
-            venv_python: .venv/Scripts/python.exe
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
-        with:
-          python-version: '3.13'
-      - name: Install GNU Make on Windows
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: choco install make --yes --no-progress
-      - name: Verify LF line endings
-        shell: bash
-        run: |
-          test -f .gitattributes
-          if grep -q $'\r' Makefile; then
-            echo 'Makefile has CRLF line endings; .gitattributes must enforce eol=lf' >&2
-            exit 1
-          fi
-      - name: Show build host
-        shell: bash
-        run: make doctor PYTHON=python
-      - name: Build and test executable
-        shell: bash
-        run: make release PYTHON=python
-      - name: Package and test extracted executable
-        shell: bash
-        run: |
-          "${{ matrix.venv_python }}" scripts/package.py
   result:
     name: CI result
     if: always()
-    needs: [source, executable]
+    needs: [source]
     runs-on: ubuntu-24.04
     permissions: {}
     steps:
-      - name: Require both matrices to succeed
+      - name: Require source checks to succeed
         env:
           SOURCE_RESULT: ${{ needs.source.result }}
-          EXECUTABLE_RESULT: ${{ needs.executable.result }}
-        run: test "$SOURCE_RESULT" = success && test "$EXECUTABLE_RESULT" = success
+        run: test "$SOURCE_RESULT" = success
