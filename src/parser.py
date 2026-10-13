@@ -1,6 +1,7 @@
 import argparse
 import sys
 from pathlib import Path
+from typing import NoReturn
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -99,14 +100,19 @@ class BuilderArgumentParser(argparse.ArgumentParser):
         parsed, unknown = self.parse_known_args(args, namespace)
         if unknown:
             command = getattr(parsed, "command", None)
-            scope = f"{self.prog} {command}" if command and self.prog == "builder" else self.prog
-            self._report_error(f"unrecognized arguments: {' '.join(unknown)}", scope)
+            if command and self.prog == "builder":
+                self.error_for(command, f"unrecognized arguments: {' '.join(unknown)}")
+            self.error(f"unrecognized arguments: {' '.join(unknown)}")
         return parsed
 
-    def error(self, message: str, scope: str | None = None) -> None:
-        self._report_error(message, scope or self.prog)
+    def error(self, message: str) -> NoReturn:
+        self._report_error(message, self.prog)
 
-    def _report_error(self, message: str, scope: str) -> None:
+    def error_for(self, command: str, message: str) -> NoReturn:
+        """Report an error for a specific command."""
+        self._report_error(message, f"{self.prog} {command}")
+
+    def _report_error(self, message: str, scope: str) -> NoReturn:
         print(f"usage: {scope} [subcommand ...parameters]", file=sys.stderr)
         print(f"{scope}: error: {message}", file=sys.stderr)
         print(file=sys.stderr)

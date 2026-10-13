@@ -87,10 +87,17 @@ class BuilderCLI(unittest.TestCase):
                          "builder device --update <DEVICE>"):
             self.assertIn(expected, help_text)
 
-        pending = (("--search", "powkiddy"), ("--info", "x55"),
-                   ("--fetch", "x55"),
-                   ("--install", "x55", "--component", "bootloader", "--version", "1.3"),
-                   ("--update", "x55", "--component", "bootloader", "--version", "1.3"))
+        search = self.run_cli("device", "--search", "powkiddy")
+        self.assertIn("No device found", search.stdout)
+        self.assertNotIn("Device Support", search.stdout)
+        self.assertNotIn("STATUS", search.stdout)
+
+        pending = (
+            ("--info", "x55"),
+            ("--fetch", "x55"),
+            ("--install", "x55", "--component", "bootloader", "--version", "1.3"),
+            ("--update", "x55", "--component", "bootloader", "--version", "1.3"),
+        )
         for args in pending:
             with self.subTest(args=args):
                 result = self.run_cli("device", *args, success=False)

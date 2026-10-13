@@ -17,13 +17,14 @@ def format_table(rows):
     )
 
 
-def list_devices():
-    """Return known entries once FeROS Sources discovery is implemented."""
-    return []
-
-
-def display() -> None:
+def display(rows: list[dict]) -> None:
     """Display the device listing."""
-    print("No device found")
+    if rows:
+        print("Device Support")
+        print("-" * 68)
+        print(format_table(rows))
+    else:
+        print("No device found")
+
     print()
     print("Run 'builder help --device' for available commands.")

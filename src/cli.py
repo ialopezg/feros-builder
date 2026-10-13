@@ -153,18 +153,25 @@ def main() -> None:
         except (OSError, ValueError) as error:
             parser.error(str(error))
     elif arguments.command == "device":
+        if arguments.component is not None or arguments.version is not None:
+            parser.error_for("device", "unknown command")
+
+        if arguments.search is not None:
+            rows = device.search(device.list_devices(), arguments.search)
+        else:
+            rows = device.list_devices()
+
+
         if arguments.list or not any((
-            arguments.search,
             arguments.info,
             arguments.fetch,
             arguments.install,
             arguments.update,
         )):
-            if arguments.component is not None or arguments.version is not None:
-                parser.error("unknown command", scope="builder device")
-            device.display()
+            device.display(rows)
         else:
-            parser.error("unknown command", scope="builder device")
+            parser.error_for("device", "unknown command")
+
     elif arguments.command == "help":
         topic = next((name for name in ("repository", "device", "build", "validate", "update")
                       if getattr(arguments, name)), None)
